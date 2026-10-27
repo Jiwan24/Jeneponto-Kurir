@@ -1,13 +1,13 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jeneponto_kurir/core/error/failures.dart';
-import 'package:jeneponto_kurir/core/utils/price_calculator.dart';
+import 'package:jeneponto_kurir/features/common/error/failures.dart';
+import 'package:jeneponto_kurir/features/delivery/domain/services/price_calculator.dart';
 import 'package:jeneponto_kurir/features/delivery/domain/entities/coordinate.dart';
 import 'package:jeneponto_kurir/features/delivery/domain/entities/delivery_address.dart';
 import 'package:jeneponto_kurir/features/delivery/domain/entities/delivery_order.dart';
 import 'package:jeneponto_kurir/features/delivery/domain/entities/payment_method.dart';
-import 'package:jeneponto_kurir/features/order/domain/entities/order_entity.dart';
+import 'package:jeneponto_kurir/features/delivery/domain/entities/order_status.dart';
 import 'package:jeneponto_kurir/features/payments/domain/entities/payment.dart';
 import 'package:jeneponto_kurir/features/payments/domain/repositories/payment_repository.dart';
 import 'package:jeneponto_kurir/features/payments/presentation/bloc/payment_bloc.dart';

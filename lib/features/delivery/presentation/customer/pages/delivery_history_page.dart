@@ -2,31 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../../core/di/injector.dart';
-import '../../../../../core/router/app_paths.dart';
-import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/widgets/app_button.dart';
-import '../../../../../core/widgets/empty_state.dart';
-import '../../../../auth/domain/entities/user_entity.dart';
-import '../../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../../order/domain/entities/order_entity.dart';
+import 'package:jeneponto_kurir/features/common/di/person2_locator.dart';
+import 'package:jeneponto_kurir/features/common/router/app_paths.dart';
+import 'package:jeneponto_kurir/features/common/theme/app_colors.dart';
+import 'package:jeneponto_kurir/features/common/widgets/app_button.dart';
+import 'package:jeneponto_kurir/features/common/widgets/empty_state.dart';
+import 'package:jeneponto_kurir/features/delivery/domain/entities/order_status.dart';
 import '../../../domain/entities/delivery_order.dart';
 import '../../bloc/delivery_history_bloc.dart';
 import '../../bloc/delivery_history_state.dart';
 import '../../widgets/delivery_order_card.dart';
 
-/// Riwayat seluruh pesanan pelanggan, termasuk pesanan lama sebelum
-/// fitur delivery diperluas.
+/// Riwayat seluruh pesanan pelanggan.
+///
+/// Modul ini tidak menangani login. Host aplikasi wajib mengirim
+/// [customerId] dari sesi yang sedang aktif.
 class DeliveryHistoryPage extends StatelessWidget {
-  const DeliveryHistoryPage({super.key});
+  const DeliveryHistoryPage({super.key, this.customerId = ''});
+
+  final String customerId;
 
   @override
   Widget build(BuildContext context) {
-    final UserEntity? user = context.watch<AuthBloc>().state.user;
     return BlocProvider<DeliveryHistoryBloc>(
-      create: (_) => sl<DeliveryHistoryBloc>()
-        ..add(DeliveryHistoryRequested(user?.uid ?? '')),
-      child: _HistoryView(customerId: user?.uid ?? ''),
+      create: (_) =>
+          sl<DeliveryHistoryBloc>()..add(DeliveryHistoryRequested(customerId)),
+      child: _HistoryView(customerId: customerId),
     );
   }
 }
@@ -136,8 +137,8 @@ class _HistoryViewState extends State<_HistoryView> {
     if (widget.customerId.isEmpty) {
       return const EmptyState(
         icon: Icons.lock_outline,
-        title: 'Sesi login tidak ditemukan',
-        message: 'Silakan masuk ulang untuk melihat pesanan.',
+        title: 'ID pelanggan tidak tersedia',
+        message: 'Host aplikasi perlu mengirim customerId ke halaman ini.',
       );
     }
 

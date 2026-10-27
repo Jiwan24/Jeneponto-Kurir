@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../order/domain/entities/order_entity.dart';
+import 'package:jeneponto_kurir/features/common/theme/app_colors.dart';
+import 'package:jeneponto_kurir/features/delivery/domain/entities/order_status.dart';
 
 /// Badge status pesanan untuk modul delivery.
 class DeliveryStatusBadge extends StatelessWidget {

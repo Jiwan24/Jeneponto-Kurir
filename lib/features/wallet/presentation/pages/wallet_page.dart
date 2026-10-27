@@ -1,52 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/di/injector.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/empty_state.dart';
-import '../../../auth/domain/entities/user_entity.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
+import 'package:jeneponto_kurir/features/common/constants/app_constants.dart';
+import 'package:jeneponto_kurir/features/common/di/person2_locator.dart';
+import 'package:jeneponto_kurir/features/common/theme/app_colors.dart';
+import 'package:jeneponto_kurir/features/common/utils/formatters.dart';
+import 'package:jeneponto_kurir/features/common/widgets/app_button.dart';
+import 'package:jeneponto_kurir/features/common/widgets/empty_state.dart';
 import '../../domain/entities/wallet.dart';
 import '../bloc/wallet_bloc.dart';
 import '../bloc/wallet_state.dart';
 
 /// Dompet kurir: saldo, pendapatan, dan riwayat transaksi.
 ///
-/// Penulisan saldo hanya dilakukan Cloud Function; halaman ini bersifat
-/// baca-saja dan menampilkan status penarikan minimum.
+/// Modul ini tidak menangani login. Host aplikasi wajib mengirim [courierId]
+/// dari sesi kurir yang sedang aktif.
 class WalletPage extends StatelessWidget {
-  const WalletPage({super.key});
+  const WalletPage({super.key, this.courierId = ''});
+
+  final String courierId;
 
   @override
   Widget build(BuildContext context) {
-    final UserEntity? user = context.watch<AuthBloc>().state.user;
-    if (user == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Dompet Kurir')),
-        body: const EmptyState(
-          icon: Icons.lock_outline,
-          title: 'Sesi login tidak ditemukan',
-          message: 'Silakan masuk ulang untuk membuka dompet.',
-        ),
-      );
-    }
-    if (!user.isCourier) {
+    if (courierId.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Dompet Kurir')),
         body: const EmptyState(
           icon: Icons.account_balance_wallet_outlined,
-          title: 'Dompet khusus kurir',
-          message: 'Saldo dan riwayat pendapatan hanya tersedia untuk akun '
-              'kurir Jeneponto Kurir.',
+          title: 'ID kurir tidak tersedia',
+          message: 'Host aplikasi perlu mengirim courierId ke halaman ini.',
         ),
       );
     }
     return BlocProvider<WalletBloc>(
-      create: (_) => sl<WalletBloc>()..add(WalletRequested(user.uid)),
-      child: _WalletView(uid: user.uid),
+      create: (_) => sl<WalletBloc>()..add(WalletRequested(courierId)),
+      child: _WalletView(uid: courierId),
     );
   }
 }

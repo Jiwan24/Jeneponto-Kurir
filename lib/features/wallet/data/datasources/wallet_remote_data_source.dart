@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../../core/constants/firestore_collections.dart';
-import '../../../../core/error/exceptions.dart';
+import 'package:jeneponto_kurir/features/common/constants/firestore_collections.dart';
+import 'package:jeneponto_kurir/features/common/error/exceptions.dart';
 import '../../domain/entities/wallet.dart';
 import '../models/wallet_model.dart';
 

@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 
-import '../../../../core/error/exceptions.dart';
-import '../../../../core/error/failures.dart';
+import 'package:jeneponto_kurir/features/common/error/exceptions.dart';
+import 'package:jeneponto_kurir/features/common/error/failures.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/repositories/delivery_repository.dart';
 import '../datasources/delivery_remote_data_source.dart';

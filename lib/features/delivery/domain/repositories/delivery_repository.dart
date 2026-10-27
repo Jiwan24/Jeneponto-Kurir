@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 
-import '../../../../core/error/failures.dart';
+import 'package:jeneponto_kurir/features/common/error/failures.dart';
 import '../entities/delivery_order.dart';
 
 /// Kontrak akses data pesanan pengiriman untuk alur pelanggan.

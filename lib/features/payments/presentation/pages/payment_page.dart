@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/di/injector.dart';
-import '../../../../core/router/app_paths.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/empty_state.dart';
+import 'package:jeneponto_kurir/features/common/di/person2_locator.dart';
+import 'package:jeneponto_kurir/features/common/router/app_paths.dart';
+import 'package:jeneponto_kurir/features/common/theme/app_colors.dart';
+import 'package:jeneponto_kurir/features/common/utils/formatters.dart';
+import 'package:jeneponto_kurir/features/common/widgets/app_button.dart';
+import 'package:jeneponto_kurir/features/common/widgets/empty_state.dart';
 import '../../../delivery/domain/entities/delivery_order.dart';
 import '../../../delivery/domain/entities/payment_method.dart';
 import '../../../delivery/presentation/bloc/delivery_order_bloc.dart';
@@ -115,8 +115,8 @@ class _CodPaymentView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           TextButton(
-            onPressed: () => context.go(AppPaths.home),
-            child: const Text('Kembali ke Beranda'),
+            onPressed: () => context.go(AppPaths.deliveryHistory),
+            child: const Text('Kembali ke Pesanan'),
           ),
         ],
       ),
@@ -378,8 +378,8 @@ class _PaidView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextButton(
-          onPressed: () => context.go(AppPaths.home),
-          child: const Text('Kembali ke Beranda'),
+          onPressed: () => context.go(AppPaths.deliveryHistory),
+          child: const Text('Kembali ke Pesanan'),
         ),
       ],
     );

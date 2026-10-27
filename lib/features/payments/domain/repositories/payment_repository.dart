@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 
-import '../../../../core/error/failures.dart';
+import 'package:jeneponto_kurir/features/common/error/failures.dart';
 import '../../../delivery/domain/entities/delivery_order.dart';
 import '../entities/payment.dart';
 

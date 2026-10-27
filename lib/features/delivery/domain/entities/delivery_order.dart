@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/utils/price_calculator.dart';
-import '../../../order/domain/entities/order_entity.dart';
+import 'package:jeneponto_kurir/features/delivery/domain/services/price_calculator.dart';
+import 'package:jeneponto_kurir/features/delivery/domain/entities/order_status.dart';
 import 'delivery_address.dart';
 import 'payment_method.dart';
 

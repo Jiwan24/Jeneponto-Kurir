@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/formatters.dart';
+import 'package:jeneponto_kurir/features/common/theme/app_colors.dart';
+import 'package:jeneponto_kurir/features/common/utils/formatters.dart';
 import '../../domain/entities/delivery_order.dart';
 import '../../domain/entities/payment_method.dart';
 

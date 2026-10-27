@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../../core/constants/app_constants.dart';
-import '../../../../../core/di/injector.dart';
-import '../../../../../core/router/app_paths.dart';
-import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/utils/formatters.dart';
-import '../../../../../core/utils/price_calculator.dart';
-import '../../../../../core/utils/validators.dart';
-import '../../../../../core/widgets/app_button.dart';
-import '../../../../../core/widgets/app_text_field.dart';
-import '../../../../auth/domain/entities/user_entity.dart';
-import '../../../../auth/presentation/bloc/auth_bloc.dart';
+import 'package:jeneponto_kurir/features/common/constants/app_constants.dart';
+import 'package:jeneponto_kurir/features/common/di/person2_locator.dart';
+import 'package:jeneponto_kurir/features/common/router/app_paths.dart';
+import 'package:jeneponto_kurir/features/common/theme/app_colors.dart';
+import 'package:jeneponto_kurir/features/common/utils/formatters.dart';
+import 'package:jeneponto_kurir/features/delivery/domain/services/price_calculator.dart';
+import 'package:jeneponto_kurir/features/delivery/domain/validators/delivery_validators.dart';
+import 'package:jeneponto_kurir/features/common/widgets/app_button.dart';
+import 'package:jeneponto_kurir/features/common/widgets/app_text_field.dart';
 import '../../../domain/entities/coordinate.dart';
 import '../../../domain/entities/delivery_address.dart';
 import '../../../domain/entities/delivery_order.dart';
@@ -23,27 +21,51 @@ import '../../bloc/delivery_checkout_state.dart';
 import 'map_picker_page.dart';
 
 /// Halaman utama "Cari Kurir": form alamat, titik peta, tarif, dan bayar.
+///
+/// Modul ini tidak menangani login. Host aplikasi wajib mengirim identitas
+/// pelanggan yang sedang aktif melalui [customerId], [customerName], dan
+/// [customerPhone].
 class SearchCourierPage extends StatelessWidget {
-  const SearchCourierPage({super.key, this.embedded = false});
+  const SearchCourierPage({
+    super.key,
+    this.embedded = false,
+    this.customerId = '',
+    this.customerName = '',
+    this.customerPhone = '',
+  });
 
-  /// True bila dipakai sebagai tab di [HomeShell] (tanpa tombol back).
+  /// True bila dipakai sebagai tab di shell beranda (tanpa tombol back).
   final bool embedded;
+  final String customerId;
+  final String customerName;
+  final String customerPhone;
 
   @override
   Widget build(BuildContext context) {
-    final UserEntity? user = context.watch<AuthBloc>().state.user;
     return BlocProvider<DeliveryCheckoutBloc>(
       create: (_) => sl<DeliveryCheckoutBloc>(),
-      child: _SearchCourierView(user: user, embedded: embedded),
+      child: _SearchCourierView(
+        embedded: embedded,
+        customerId: customerId,
+        customerName: customerName,
+        customerPhone: customerPhone,
+      ),
     );
   }
 }
 
 class _SearchCourierView extends StatefulWidget {
-  const _SearchCourierView({required this.user, required this.embedded});
+  const _SearchCourierView({
+    required this.embedded,
+    required this.customerId,
+    required this.customerName,
+    required this.customerPhone,
+  });
 
-  final UserEntity? user;
   final bool embedded;
+  final String customerId;
+  final String customerName;
+  final String customerPhone;
 
   @override
   State<_SearchCourierView> createState() => _SearchCourierViewState();
@@ -79,8 +101,8 @@ class _SearchCourierViewState extends State<_SearchCourierView> {
   @override
   void initState() {
     super.initState();
-    _pickupName = TextEditingController(text: widget.user?.name ?? '');
-    _pickupPhone = TextEditingController(text: widget.user?.phone ?? '');
+    _pickupName = TextEditingController(text: widget.customerName);
+    _pickupPhone = TextEditingController(text: widget.customerPhone);
     _dropoffName = TextEditingController();
     _dropoffPhone = TextEditingController();
   }
@@ -172,9 +194,8 @@ class _SearchCourierViewState extends State<_SearchCourierView> {
       return;
     }
 
-    final UserEntity? user = widget.user;
-    if (user == null) {
-      _showMessage('Sesi login tidak ditemukan. Silakan masuk ulang.');
+    if (widget.customerId.isEmpty) {
+      _showMessage('ID pelanggan tidak tersedia. Sambungkan ulang sesi.');
       return;
     }
 
@@ -198,9 +219,9 @@ class _SearchCourierViewState extends State<_SearchCourierView> {
     context.read<DeliveryCheckoutBloc>().add(
           DeliveryCheckoutSubmitted(
             DeliveryDraft(
-              customerId: user.uid,
-              customerName: user.name,
-              customerPhone: user.phone,
+              customerId: widget.customerId,
+              customerName: widget.customerName,
+              customerPhone: widget.customerPhone,
               pickup: pickup,
               dropoff: dropoff,
               distanceKm: _distanceKm!,
@@ -219,8 +240,9 @@ class _SearchCourierViewState extends State<_SearchCourierView> {
     final String target = state.paymentMethod == PaymentMethod.midtrans
         ? AppPaths.deliveryPayment(id)
         : AppPaths.deliverySearching(id);
-    // Saat form menjadi tab HomeShell, `pushReplacement` akan mengganti
-    // seluruh shell. Gunakan push agar tombol kembali tetap ke beranda.
+    // Saat form menjadi tab di shell beranda, `pushReplacement` akan
+    // mengganti seluruh shell. Gunakan push agar tombol kembali tetap
+    // kembali ke halaman sebelumnya.
     if (widget.embedded) {
       context.push(target);
     } else {

@@ -1,13 +1,12 @@
 # Jeneponto Kurir — Person 2 (Customer & Financial)
 
 Branch `person2-only` hanya berisi deliverable **Orang 2**: pemesanan customer,
-pembayaran, dan dompet kurir. Kode Person 1 (fondasi/auth/profile/home) dan
-Person 3 (courier/chat) sudah dihapus dari branch ini sesuai pembagian scope.
+pembayaran, dan dompet kurir. Tidak ada kode login/auth, profil, beranda,
+maupun fitur kurir/chat dari Person 1 atau Person 3.
 
-> **Penting:** branch ini bukan aplikasi utuh yang bisa langsung dijalankan.
-> Modul Person 2 masih membutuhkan fondasi bersama dari Person 1 dan titik
-> integrasi dari Person 3. Daftar dependensinya ada di bagian
-> [Dependensi integrasi](#dependensi-integrasi).
+> Branch ini adalah **modul fitur**, bukan aplikasi utuh. Tidak ada `main.dart`
+> atau shell aplikasi. Host aplikasi cukup memanggil registrasi dependency dan
+> mengirim ID pengguna ke halaman Person 2.
 
 ## Scope yang disertakan
 
@@ -16,41 +15,39 @@ Person 3 (courier/chat) sudah dihapus dari branch ini sesuai pembagian scope.
 | Pemesanan customer, peta, tarif, riwayat, pelacakan | `lib/features/delivery/` |
 | Pembayaran COD dan Midtrans Snap | `lib/features/payments/` |
 | Dompet kurir dan riwayat transaksi | `lib/features/wallet/` |
+| Komponen/utility internal Person 2 | `lib/features/common/` |
 | Backend pembayaran, COD settlement, wallet ledger | `functions/` |
 | Firestore rules dan indexes | `firebase/` |
 | Test tarif, validasi, checkout, pembayaran, wallet | `test/features/` |
 | Setup Midtrans | `docs/PAYMENT_SETUP.md` |
 
-## Alur yang diserahkan
+## Prinsip integrasi
 
-- Cari kurir dan formulir pemesanan.
-- Alamat pengambilan/tujuan dan pemilihan titik peta.
-- Validasi area layanan Kabupaten Jeneponto.
-- Perhitungan estimasi tarif dan rincian biaya.
-- Status pencarian kurir, detail pesanan, dan riwayat pengiriman.
-- Pembayaran COD dan Midtrans Snap melalui Cloud Functions.
-- Dompet kurir server-authoritative: saldo, komisi, minimum payout, dan riwayat.
-- Backend merekalkulasi tarif di server dan mencatat ledger wallet.
+Person 2 **tidak menangani autentikasi**. Halaman menerima identitas dari host:
 
-## Dependensi integrasi
+- `SearchCourierPage(customerId:, customerName:, customerPhone:)`
+- `DeliveryHistoryPage(customerId:)`
+- `WalletPage(courierId:)`
 
-Modul Person 2 memakai fondasi berikut yang **sengaja tidak disertakan** di
-branch ini:
+Host aplikasi bertanggung jawab untuk login, role, navigasi, dan tema global.
+Registrasi dependency dilakukan sekali setelah `Firebase.initializeApp`:
 
-- `lib/core/constants/` — konstanta tarif dan nama koleksi.
-- `lib/core/di/injector.dart` — registrasi dependency.
-- `lib/core/error/` — `Failure` dan exception.
-- `lib/core/router/app_paths.dart` — path navigasi.
-- `lib/core/theme/`, `core/widgets/`, `core/utils/` — komponen dan util bersama.
-- `lib/features/auth/domain/entities/user_entity.dart` — identitas pengguna.
-- `lib/features/auth/presentation/bloc/auth_bloc.dart` — user aktif.
-- `lib/features/order/domain/entities/order_entity.dart` — model order legacy.
-- `lib/app.dart` dan `lib/main.dart` — bootstrap aplikasi.
-- Person 3: penyelesaian pengantaran yang memicu pencatatan wallet.
+```dart
+import 'package:jeneponto_kurir/features/common/di/person2_locator.dart';
 
-Untuk menjalankan aplikasi lengkap, gunakan branch `Kaiser` atau `main`, lalu
-gabungkan modul Person 2 ke fondasi tersebut. Branch ini dapat dipakai untuk
-review kode dan pengujian terisolasi setelah dependensi di atas disediakan.
+await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+await initPerson2Dependencies();
+```
+
+Path route tersedia di `lib/features/common/router/app_paths.dart`.
+
+## Yang sengaja tidak ada
+
+- Login, registrasi, `AuthBloc`, `UserEntity`, dan role check.
+- `OrderEntity` / fitur order lama. Status pesanan Person 2 memakai
+  `OrderStatus` lokal di `delivery/domain/entities/order_status.dart`.
+- Fitur kurir, chat, notifikasi, unggah bukti, dan profil.
+- Shell aplikasi, beranda, dan router global.
 
 ## Backend dan keamanan
 
@@ -64,12 +61,10 @@ review kode dan pengujian terisolasi setelah dependensi di atas disediakan.
 
 ## Verifikasi
 
-Pada branch lengkap (`Kaiser`/`main`):
-
 ```sh
+flutter pub get
 flutter analyze
 flutter test
 ```
 
-Pada branch `person2-only`, perintah tersebut belum bisa dijalankan sampai
-dependensi integrasi di atas dipulihkan.
+Semua test Person 2 berjalan tanpa Firebase dan tanpa kode Person 1/3.

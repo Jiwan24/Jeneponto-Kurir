@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 
-import '../../../../core/error/exceptions.dart';
-import '../../../../core/error/failures.dart';
+import 'package:jeneponto_kurir/features/common/error/exceptions.dart';
+import 'package:jeneponto_kurir/features/common/error/failures.dart';
 import '../../domain/entities/wallet.dart';
 import '../../domain/repositories/wallet_repository.dart';
 import '../datasources/wallet_remote_data_source.dart';

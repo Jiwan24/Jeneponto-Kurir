@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../../../core/theme/app_colors.dart';
+import 'package:jeneponto_kurir/features/common/theme/app_colors.dart';
 import '../../../domain/entities/coordinate.dart';
 import '../../../domain/entities/jeneponto_service_area.dart';
 

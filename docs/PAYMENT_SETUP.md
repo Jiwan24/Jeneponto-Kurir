@@ -110,15 +110,15 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 ## 5. Pengujian sandbox
 
-1. Login sebagai pelanggan, buat pesanan dengan **Bayar Online**.
+1. Dari host aplikasi, buka halaman **Cari Kurir** sebagai pelanggan.
 2. Di halaman pembayaran, tekan **Bayar Sekarang**.
 3. Browser terbuka ke halaman Snap. Gunakan kartu uji Midtrans, mis.
    `4811 1111 1111 1114`, masa berlaku bebas, CVV `123`, OTP `112233`.
 4. Setelah selesai, kembali ke aplikasi dan tekan **Saya Sudah Bayar** bila
    status belum berubah otomatis.
 5. Pesanan harus berpindah ke tab order kurir.
-6. Login sebagai kurir, terima order, majukan status sampai **Terkirim**.
-7. Buka **Profil → Dompet Kurir**: saldo dan riwayat pendapatan harus muncul.
+6. Dari host aplikasi, buka **Dompet Kurir** sebagai kurir.
+7. Saldo dan riwayat pendapatan harus muncul.
 
 Untuk COD, langkah 2–4 dilewati; pembayaran tercatat saat pengiriman selesai.
 

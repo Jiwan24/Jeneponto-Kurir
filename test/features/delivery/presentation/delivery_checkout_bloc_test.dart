@@ -1,7 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jeneponto_kurir/core/error/failures.dart';
+import 'package:jeneponto_kurir/features/common/error/failures.dart';
 import 'package:jeneponto_kurir/features/delivery/domain/entities/coordinate.dart';
 import 'package:jeneponto_kurir/features/delivery/domain/entities/delivery_address.dart';
 import 'package:jeneponto_kurir/features/delivery/domain/entities/delivery_order.dart';
