@@ -2,6 +2,9 @@ import 'package:equatable/equatable.dart';
 
 /// Status pengiriman paket.
 enum OrderStatus {
+  /// Pesanan sudah dibuat tetapi pembayaran (non-COD) belum selesai.
+  /// Tidak muncul di job board kurir sampai berubah menjadi [pending].
+  awaitingPayment('Menunggu pembayaran'),
   pending('Menunggu kurir'),
   accepted('Diterima kurir'),
   pickedUp('Paket diambil'),

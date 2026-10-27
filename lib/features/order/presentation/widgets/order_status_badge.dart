@@ -11,6 +11,7 @@ class OrderStatusBadge extends StatelessWidget {
 
   static Color _colorFor(OrderStatus status) {
     switch (status) {
+      case OrderStatus.awaitingPayment:
       case OrderStatus.pending:
         return AppColors.warning;
       case OrderStatus.accepted:
