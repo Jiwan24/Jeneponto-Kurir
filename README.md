@@ -1,230 +1,75 @@
-# Jeneponto Kurir 🛵📦
+# Jeneponto Kurir — Person 2 (Customer & Financial)
 
-Aplikasi layanan kurir/wilayah **Kabupaten Jeneponto** — pelanggan mengirim paket,
-kurir lokal menerima & mengantarkan, admin memantau seluruh transaksi.
+Branch `person2-only` hanya berisi deliverable **Orang 2**: pemesanan customer,
+pembayaran, dan dompet kurir. Kode Person 1 (fondasi/auth/profile/home) dan
+Person 3 (courier/chat) sudah dihapus dari branch ini sesuai pembagian scope.
 
-**Arsitektur: Clean Architecture + Feature-First + Bloc/Cubit + Firebase**
+> **Penting:** branch ini bukan aplikasi utuh yang bisa langsung dijalankan.
+> Modul Person 2 masih membutuhkan fondasi bersama dari Person 1 dan titik
+> integrasi dari Person 3. Daftar dependensinya ada di bagian
+> [Dependensi integrasi](#dependensi-integrasi).
 
----
+## Scope yang disertakan
 
-## 1. Ringkasan Peran (Multi-Role)
+| Area | Lokasi |
+|------|--------|
+| Pemesanan customer, peta, tarif, riwayat, pelacakan | `lib/features/delivery/` |
+| Pembayaran COD dan Midtrans Snap | `lib/features/payments/` |
+| Dompet kurir dan riwayat transaksi | `lib/features/wallet/` |
+| Backend pembayaran, COD settlement, wallet ledger | `functions/` |
+| Firestore rules dan indexes | `firebase/` |
+| Test tarif, validasi, checkout, pembayaran, wallet | `test/features/` |
+| Setup Midtrans | `docs/PAYMENT_SETUP.md` |
 
-| Peran    | Halaman utama                                  | Alur inti |
-|----------|------------------------------------------------|-----------|
-| Customer | Beranda, Pesanan Saya, Profil                  | Buat pesanan → bayar/tunggu kurir → lacak status |
-| Kurir    | Dashboard (Order Tersedia, Tugas Saya), Profil | Terima order → ambil paket → antar → tandai terkirim |
-| Admin    | Dashboard (ringkasan + semua pesanan), Profil  | Pantau statistik & transaksi |
+## Alur yang diserahkan
 
-Akun **Admin** tidak dibuat dari aplikasi — daftarkan manual di Firebase Console
-(lihat bagian 6).
+- Cari kurir dan formulir pemesanan.
+- Alamat pengambilan/tujuan dan pemilihan titik peta.
+- Validasi area layanan Kabupaten Jeneponto.
+- Perhitungan estimasi tarif dan rincian biaya.
+- Status pencarian kurir, detail pesanan, dan riwayat pengiriman.
+- Pembayaran COD dan Midtrans Snap melalui Cloud Functions.
+- Dompet kurir server-authoritative: saldo, komisi, minimum payout, dan riwayat.
+- Backend merekalkulasi tarif di server dan mencatat ledger wallet.
 
----
+## Dependensi integrasi
 
-## 2. Arsitektur
+Modul Person 2 memakai fondasi berikut yang **sengaja tidak disertakan** di
+branch ini:
 
-Pola **Clean Architecture** diterapkan per fitur (*feature-first*), sehingga
-setiap fitur berdiri sendiri dan mudah diuji/diganti.
+- `lib/core/constants/` — konstanta tarif dan nama koleksi.
+- `lib/core/di/injector.dart` — registrasi dependency.
+- `lib/core/error/` — `Failure` dan exception.
+- `lib/core/router/app_paths.dart` — path navigasi.
+- `lib/core/theme/`, `core/widgets/`, `core/utils/` — komponen dan util bersama.
+- `lib/features/auth/domain/entities/user_entity.dart` — identitas pengguna.
+- `lib/features/auth/presentation/bloc/auth_bloc.dart` — user aktif.
+- `lib/features/order/domain/entities/order_entity.dart` — model order legacy.
+- `lib/app.dart` dan `lib/main.dart` — bootstrap aplikasi.
+- Person 3: penyelesaian pengantaran yang memicu pencatatan wallet.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  presentation/   UI (Page/Widget) + Bloc/Event/State        │
-│      │  hanya bicara lewat repository (interface)           │
-├─────────────────────────────────────────────────────────────┤
-│  domain/         Entity + Repository (abstract)            │
-│      │  aturan bisnis murni, TANPA dependensi Firebase      │
-├─────────────────────────────────────────────────────────────┤
-│  data/           Model + RemoteDataSource + RepositoryImpl  │
-│      │  menerjemahkan exception → Failure (dartz Either)    │
-└─────────────────────────────────────────────────────────────┘
-                    │
-              Firebase (Auth + Firestore)
-```
+Untuk menjalankan aplikasi lengkap, gunakan branch `Kaiser` atau `main`, lalu
+gabungkan modul Person 2 ke fondasi tersebut. Branch ini dapat dipakai untuk
+review kode dan pengujian terisolasi setelah dependensi di atas disediakan.
 
-**Prinsip aliran data (satu arah):**
+## Backend dan keamanan
 
-```
-Event → Bloc → Repository (interface) → RepositoryImpl → DataSource → Firestore
-   ↑                                                           │
-   └────────────── State ←─────────────────────────────────────┘
-                          (stream realtime)
-```
+- Functions: `functions/index.js` (Midtrans callable/webhook, COD settlement,
+  wallet trigger, rekalkulasi tarif).
+- Rules: `firebase/firestore.rules`.
+- Indexes: `firebase/firestore.indexes.json`.
+- Panduan deploy dan secret: `docs/PAYMENT_SETUP.md`.
+- Jangan commit `functions/.env.local` atau server key Midtrans. File tersebut
+  sudah di-ignore.
 
-- **Domain** tidak tahu Flutter/Firebase → bisnis gampang diuji unit test.
-- **Bloc** hanya menerima `Event` dan memancarkan `State`.
-- **Failure** (`core/error/failures.dart`) dibungkus `Either<Failure, T>` dengan
-  `dartz`, sehingga error teknis (Firebase) tidak pernah bocor ke UI.
-- **Routing & guard** ditangani `GoRouter` yang mendengarkan stream `AuthBloc`
-  (`core/router/app_router.dart`) — user belum login selalu dialihkan ke `/login`.
-- **Dependency Injection** memakai `get_it` (`core/di/injector.dart`).
-  `AuthBloc` = singleton (dipakai router), bloc halaman = factory (stream segar
-  per halaman/user).
+## Verifikasi
 
-### Struktur folder
-
-```
-lib/
-├── main.dart                      # inisialisasi Firebase + locale + DI
-├── app.dart                       # MaterialApp.router + AuthBloc global
-├── core/                          # lintasan lintas-fitur (tidak tahu fitur)
-│   ├── config/firebase_options.dart
-│   ├── constants/                 # app_constants, firestore_collections
-│   ├── di/injector.dart           # get_it service locator
-│   ├── error/                     # failures.dart, exceptions.dart
-│   ├── router/                    # app_router.dart (guard auth)
-│   ├── theme/                     # app_colors, app_theme (Material 3)
-│   ├── utils/                     # formatters, validators, price_calculator
-│   └── widgets/                   # app_button, app_text_field, empty_state
-└── features/
-    ├── auth/                      # login, register, session
-    │   ├── domain/  (entities, repositories)
-    │   ├── data/    (models, datasources, repositories)
-    │   └── presentation/ (bloc, pages)
-    ├── order/                      # pesanan: buat, list, batalkan
-    │   └── ... + presentation/widgets (order_card, order_status_badge)
-    ├── courier/                     # dashboard kurir + progres status
-    ├── admin/                       # dashboard admin
-    ├── home/                        # shell (bottom nav per peran) + beranda
-    ├── profile/                     # profil & logout
-    └── splash/                      # layar pembuka
-test/
-└── core/utils/                     # unit test kalkulator tarif & validator
-firebase/
-├── firestore.rules                 # keamanan data per peran
-└── firestore.indexes.json          # composite index untuk query order
-```
-
----
-
-## 3. Model Data (Firestore)
-
-### `users/{uid}`
-```jsonc
-{
-  "uid": "abc123",
-  "name": "Budi",
-  "email": "budi@mail.com",
-  "phone": "0812...",
-  "role": "customer | courier | admin",
-  "photoUrl": null,
-  "createdAt": "<timestamp>"
-}
-```
-
-### `orders/{id}`
-```jsonc
-{
-  "customerId": "uid-pelanggan",
-  "customerName": "Budi",
-  "courierId": "uid-kurir | null",
-  "courierName": "Andi | null",
-  "pickupAddress": "Jl. ..., Jeneponto",
-  "destinationAddress": "Pasar Binamu, Jeneponto",
-  "note": "barang pecah belah",
-  "distanceKm": 4.5,
-  "price": 19500,                    // lihat PriceCalculator
-  "status": "pending | accepted | pickedUp | inTransit | delivered | cancelled",
-  "createdAt": "<timestamp>",
-  "updatedAt": "<timestamp>"
-}
-```
-
-**Mesin status (kurir):**
-`pending → (terima) accepted → pickedUp → inTransit → delivered`
-— pelanggan hanya boleh membatalkan saat masih `pending`.
-
-**Tarif (MVP):** `Rp 8.000 + Rp 2.500/km` (min. 1 km), dibulatkan ke atas
-per Rp 500 → `core/utils/price_calculator.dart`.
-
----
-
-## 4. Tech Stack
-
-| Kebutuhan | Pilihan | Alasan |
-|---|---|---|
-| State management | `flutter_bloc` | event-driven, mudah di-test (`bloc_test`) |
-| Routing | `go_router` + guard auth | deklaratif, redirect berbasis stream |
-| DI | `get_it` | ringan, tanpa codegen |
-| Functional | `dartz` (`Either`) | error handling eksplisit |
-| Backend | Firebase Auth, Firestore, Storage, FCM | cepat untuk MVP, realtime bawaan |
-| UI | Material 3 | tema konsisten |
-
----
-
-## 5. Menjalankan Proyek
-
-Prasyarat: Flutter SDK terbaru, akun Firebase, Node.js (untuk CLI Firebase).
+Pada branch lengkap (`Kaiser`/`main`):
 
 ```sh
-# 1. Buat platform folder (android/ios) — scaffold ini berisi kode Dart saja
-flutter create . --org com.jeneponto --project-name jeneponto_kurir
-
-# 2. Ambil dependensi
-flutter pub get
-
-# 3. Hubungkan Firebase (menimpa lib/core/config/firebase_options.dart)
-dart pub global activate flutterfire_cli
-flutterfire configure --project=jeneponto-kurir
-
-# 4. Aktifkan "Email/Password" di Firebase Console → Authentication → Sign-in method
-#    dan buat database Firestore (mode production lalu atur rules)
-
-# 5. Deploy keamanan & index
-firebase deploy --only firestore:rules,firestore:indexes
-
-# 6. Jalankan
-flutter run
-```
-
-> Bila konfigurasi Firebase belum diisi, aplikasi menampilkan layar panduan
-> (`SetupRequiredApp`) alih-alih crash.
-
-### Membuat akun Admin
-1. Daftar dulu dari aplikasi sebagai **Customer** (atau buat user manual).
-2. Di Firebase Console → Firestore → dokumen `users/{uid}`, ubah
-   `"role": "admin"`.
-3. Logout & login ulang → menu berubah menjadi dashboard admin.
-
-### Menambah kurir
-Daftar dari aplikasi memilih peran **Kurir** — langsung bisa melihat order
-`pending`.
-
----
-
-## 6. Pengujian
-
-```sh
-flutter test          # unit test tarif & validator
 flutter analyze
+flutter test
 ```
 
-Struktur test mengikuti pola `bloc_test` + `mocktail` (sudah ditambahkan ke
-`dev_dependencies`) — contoh yang disarankan berikutnya:
-`test/features/auth/presentation/auth_bloc_test.dart`.
-
----
-
-## 7. Roadmap (fitur berikutnya)
-
-1. **Peta & jarak otomatis** — `google_maps_flutter` + `geolocator`,
-   ganti input jarak manual (komentar di `pubspec.yaml` sudah disiapkan).
-2. **Notifikasi FCM** — notifikasi order baru ke kurir, status ke pelanggan.
-3. **Lacak kurir realtime** — simpan posisi kurir, tampilkan di peta.
-4. **Unggah bukti kirim** — `firebase_storage` + `image_picker`
-   (dependensi sudah terpasang).
-5. **Pembayaran** — QRIS/transfer manual + unggah bukti.
-6. **Penilaian kurir** & riwayat laporan admin (export CSV).
-
----
-
-## 8. Catatan Teknis Penting
-
-- **Composite index**: query `orders` butuh index gabungan — sudah didefinisikan
-  di `firebase/firestore.indexes.json` dan otomatis ter-deploy pada langkah 5.
-  (Bila lupa, pesan error Firestore akan mencantumkan tautan pembuatannya.)
-- **Keamanan**: `firebase/firestore.rules` membatasi akses per peran — pelanggan
-  hanya membaca pesanannya, kurir hanya menerima/memajukan order miliknya,
-  admin penuh. Ganti aturan bila model bisnis berubah.
-- **Nama collection** (`users`, `orders`) dikunci di
-  `core/constants/firestore_collections.dart`.
-- Lokasi kode: seluruh rute di `core/router/app_router.dart` — tambahkan route
-  baru di sini, bukan dengan `Navigator.push` manual.
+Pada branch `person2-only`, perintah tersebut belum bisa dijalankan sampai
+dependensi integrasi di atas dipulihkan.
