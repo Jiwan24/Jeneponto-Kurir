@@ -5,7 +5,8 @@ import '../../admin/presentation/pages/admin_dashboard_page.dart';
 import '../../auth/domain/entities/user_entity.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../courier/presentation/pages/courier_dashboard_page.dart';
-import '../../order/presentation/pages/orders_page.dart';
+import '../../delivery/presentation/customer/pages/delivery_history_page.dart';
+import '../../delivery/presentation/customer/pages/search_courier_page.dart';
 import '../../profile/presentation/pages/profile_page.dart';
 import 'pages/customer_home_page.dart';
 
@@ -31,8 +32,7 @@ class _HomeShellState extends State<HomeShell> {
     }
 
     final destinations = _destinationsFor(user.role);
-    final int index =
-        _selectedIndex < destinations.length ? _selectedIndex : 0;
+    final int index = _selectedIndex < destinations.length ? _selectedIndex : 0;
 
     return Scaffold(
       body: IndexedStack(
@@ -74,10 +74,16 @@ class _HomeShellState extends State<HomeShell> {
             page: CustomerHomePage(),
           ),
           _ShellDestination(
+            label: 'Cari Kurir',
+            icon: Icons.local_shipping_outlined,
+            selectedIcon: Icons.local_shipping,
+            page: SearchCourierPage(embedded: true),
+          ),
+          _ShellDestination(
             label: 'Pesanan',
             icon: Icons.receipt_long_outlined,
             selectedIcon: Icons.receipt_long,
-            page: OrdersPage(),
+            page: DeliveryHistoryPage(),
           ),
           profile,
         ];

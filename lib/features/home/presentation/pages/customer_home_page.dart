@@ -4,13 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injector.dart';
-import '../../../../core/router/app_router.dart';
+import '../../../../core/router/app_paths.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../order/presentation/bloc/order_bloc.dart';
-import '../../order/presentation/bloc/order_event.dart';
-import '../../order/presentation/bloc/order_state.dart';
-import '../../order/presentation/widgets/order_card.dart';
+import '../../../order/presentation/bloc/order_bloc.dart';
+import '../../../order/presentation/bloc/order_event.dart';
+import '../../../order/presentation/bloc/order_state.dart';
+import '../../../order/presentation/widgets/order_card.dart';
 
 /// Beranda pelanggan: sapaan, layanan cepat, dan pesanan terbaru.
 class CustomerHomePage extends StatelessWidget {
@@ -74,8 +74,7 @@ class CustomerHomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   FilledButton.tonal(
-                    onPressed: () =>
-                        context.push(AppRouter.createOrderPath),
+                    onPressed: () => context.push(AppPaths.deliveryNew),
                     child: const Text('Kirim Paket Sekarang'),
                   ),
                 ],
@@ -88,7 +87,7 @@ class CustomerHomePage extends StatelessWidget {
                   child: _ServiceCard(
                     icon: Icons.add_box_outlined,
                     label: 'Buat Pesanan',
-                    onTap: () => context.push(AppRouter.createOrderPath),
+                    onTap: () => context.push(AppPaths.deliveryNew),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -96,7 +95,7 @@ class CustomerHomePage extends StatelessWidget {
                   child: _ServiceCard(
                     icon: Icons.receipt_long_outlined,
                     label: 'Pesanan Saya',
-                    onTap: () => context.push(AppRouter.ordersPath),
+                    onTap: () => context.push(AppPaths.deliveryHistory),
                   ),
                 ),
               ],
@@ -115,7 +114,7 @@ class CustomerHomePage extends StatelessWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => context.push(AppRouter.ordersPath),
+                  onPressed: () => context.push(AppPaths.deliveryHistory),
                   child: const Text('Lihat semua'),
                 ),
               ],
@@ -228,9 +227,21 @@ class _HowItWorks extends StatelessWidget {
   const _HowItWorks();
 
   static const _steps = [
-    (icon: Icons.edit_note, title: 'Buat Pesanan', desc: 'Isi alamat jemput & tujuan'),
-    (icon: Icons.person_search, title: 'Kurir Menerima', desc: 'Kurir lokal mengambil paketmu'),
-    (icon: Icons.where_to_vote_outlined, title: 'Paket Terkirim', desc: 'Lacak status hingga sampai'),
+    (
+      icon: Icons.edit_note,
+      title: 'Buat Pesanan',
+      desc: 'Isi alamat jemput & tujuan'
+    ),
+    (
+      icon: Icons.person_search,
+      title: 'Kurir Menerima',
+      desc: 'Kurir lokal mengambil paketmu'
+    ),
+    (
+      icon: Icons.where_to_vote_outlined,
+      title: 'Paket Terkirim',
+      desc: 'Lacak status hingga sampai'
+    ),
   ];
 
   @override
@@ -261,8 +272,7 @@ class _HowItWorks extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 16,
-                    backgroundColor:
-                        AppColors.primary.withValues(alpha: 0.12),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
                     child: Icon(step.icon, size: 18, color: AppColors.primary),
                   ),
                   const SizedBox(width: 12),

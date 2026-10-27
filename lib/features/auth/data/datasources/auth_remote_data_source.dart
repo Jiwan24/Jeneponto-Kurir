@@ -58,7 +58,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (user == null) {
         throw const AuthException('Gagal masuk. Coba lagi.');
       }
-      return _fetchProfile(user);
+      return await _fetchProfile(user);
     } on FirebaseAuthException catch (e) {
       throw AuthException(_authMessage(e));
     }

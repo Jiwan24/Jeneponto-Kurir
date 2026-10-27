@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../order/domain/entities/order_entity.dart';
-import '../../order/domain/repositories/order_repository.dart';
+import '../../../order/domain/entities/order_entity.dart';
+import '../../../order/domain/repositories/order_repository.dart';
 import 'courier_order_event.dart';
 import 'courier_order_state.dart';
 
@@ -39,13 +39,12 @@ class CourierOrderBloc extends Bloc<CourierOrderEvent, CourierOrderState> {
     await _availableSubscription?.cancel();
     await _deliveriesSubscription?.cancel();
 
-    _availableSubscription =
-        _orderRepository.watchPendingOrders().listen(
-              (orders) => add(CourierAvailableReceived(orders)),
-              onError: (_) => add(
-                const CourierWatchFailed('Gagal memuat order tersedia.'),
-              ),
-            );
+    _availableSubscription = _orderRepository.watchPendingOrders().listen(
+          (orders) => add(CourierAvailableReceived(orders)),
+          onError: (_) => add(
+            const CourierWatchFailed('Gagal memuat order tersedia.'),
+          ),
+        );
 
     _deliveriesSubscription =
         _orderRepository.watchCourierOrders(_courierId).listen(
@@ -78,7 +77,8 @@ class CourierOrderBloc extends Bloc<CourierOrderEvent, CourierOrderState> {
     ));
   }
 
-  void _onWatchFailed(CourierWatchFailed event, Emitter<CourierOrderState> emit) {
+  void _onWatchFailed(
+      CourierWatchFailed event, Emitter<CourierOrderState> emit) {
     emit(state.copyWith(isLoading: false, message: event.message));
   }
 

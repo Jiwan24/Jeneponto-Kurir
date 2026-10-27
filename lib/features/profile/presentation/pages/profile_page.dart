@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/router/app_paths.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../auth/domain/entities/user_entity.dart';
-import '../../auth/presentation/bloc/auth_bloc.dart';
-import '../../auth/presentation/bloc/auth_event.dart';
-import '../../auth/presentation/bloc/auth_state.dart';
+import '../../../auth/domain/entities/user_entity.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 
 /// Profil pengguna + tombol keluar.
 class ProfilePage extends StatelessWidget {
@@ -111,6 +113,32 @@ class ProfilePage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
+                    if (user?.isCourier == true) ...[
+                      ListTile(
+                        leading: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                        ),
+                        title: const Text('Dompet Kurir'),
+                        subtitle: const Text(
+                          'Saldo dan riwayat pendapatan pengiriman',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push(AppPaths.wallet),
+                      ),
+                      const Divider(height: 1),
+                    ],
+                    if (user?.isCustomer == true) ...[
+                      ListTile(
+                        leading: const Icon(Icons.receipt_long_outlined),
+                        title: const Text('Pesanan Saya'),
+                        subtitle: const Text(
+                          'Riwayat dan status pengiriman',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push(AppPaths.deliveryHistory),
+                      ),
+                      const Divider(height: 1),
+                    ],
                     ListTile(
                       leading: const Icon(Icons.phone_outlined),
                       title: const Text('Hubungi layanan pelanggan'),
@@ -128,8 +156,7 @@ class ProfilePage extends StatelessWidget {
                           context: context,
                           builder: (_) => AlertDialog(
                             title: const Text(AppConstants.appName),
-                            content:
-                                const Text(AppConstants.aboutText),
+                            content: const Text(AppConstants.aboutText),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(context).pop(),

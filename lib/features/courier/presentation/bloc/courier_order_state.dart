@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import '../../order/domain/entities/order_entity.dart';
+import '../../../order/domain/entities/order_entity.dart';
 
 class CourierOrderState extends Equatable {
   const CourierOrderState({

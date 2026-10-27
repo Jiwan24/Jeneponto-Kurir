@@ -44,9 +44,8 @@ class _AdminDashboardView extends StatelessWidget {
               );
             case AdminStatus.success:
               return RefreshIndicator(
-                onRefresh: () async => context
-                    .read<AdminBloc>()
-                    .add(const AdminOrdersRequested()),
+                onRefresh: () async =>
+                    context.read<AdminBloc>().add(const AdminOrdersRequested()),
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                   children: [
@@ -99,10 +98,12 @@ class _StatsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_StatItem>[
       _StatItem('Total', state.total, AppColors.primary),
-      _StatItem('Menunggu', state.countOf(OrderStatus.pending), AppColors.warning),
+      _StatItem('Menunggu', state.waiting, AppColors.warning),
       _StatItem('Dalam Proses', state.active, AppColors.accent),
-      _StatItem('Terkirim', state.countOf(OrderStatus.delivered), AppColors.success),
-      _StatItem('Dibatalkan', state.countOf(OrderStatus.cancelled), AppColors.danger),
+      _StatItem(
+          'Terkirim', state.countOf(OrderStatus.delivered), AppColors.success),
+      _StatItem(
+          'Dibatalkan', state.countOf(OrderStatus.cancelled), AppColors.danger),
     ];
 
     return GridView.count(

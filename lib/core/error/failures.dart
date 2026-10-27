@@ -12,9 +12,9 @@ abstract class Failure extends Equatable {
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure(
-    [super.message = 'Terjadi gangguan pada server. Coba lagi.'],
-  );
+  const ServerFailure([
+    super.message = 'Terjadi gangguan pada server. Coba lagi.',
+  ]);
 }
 
 class AuthFailure extends Failure {
@@ -22,7 +22,9 @@ class AuthFailure extends Failure {
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure([super.message = 'Tidak ada koneksi internet.']);
+  const NetworkFailure([
+    super.message = 'Tidak ada koneksi internet.',
+  ]);
 }
 
 class ValidationFailure extends Failure {

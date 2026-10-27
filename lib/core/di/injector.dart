@@ -8,11 +8,14 @@ import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_event.dart';
 import '../../features/courier/presentation/bloc/courier_order_bloc.dart';
+import '../../features/delivery/di/delivery_di.dart';
 import '../../features/order/data/datasources/order_remote_data_source.dart';
 import '../../features/order/data/repositories/order_repository_impl.dart';
 import '../../features/order/domain/repositories/order_repository.dart';
 import '../../features/order/presentation/bloc/order_bloc.dart';
 import '../../features/admin/presentation/bloc/admin_bloc.dart';
+import '../../features/payments/di/payments_di.dart';
+import '../../features/wallet/di/wallet_di.dart';
 
 /// Service locator global.
 final GetIt sl = GetIt.instance;
@@ -54,4 +57,9 @@ Future<void> initDependencies() async {
     () => CourierOrderBloc(orderRepository: sl()),
   );
   sl.registerFactory<AdminBloc>(() => AdminBloc(orderRepository: sl()));
+
+  // ---- Delivery / Payments / Wallet (Person 2) ----
+  registerDeliveryDependencies(sl);
+  registerPaymentDependencies(sl);
+  registerWalletDependencies(sl);
 }

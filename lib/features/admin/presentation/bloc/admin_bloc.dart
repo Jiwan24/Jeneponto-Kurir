@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../order/domain/entities/order_entity.dart';
-import '../../order/domain/repositories/order_repository.dart';
+import '../../../order/domain/entities/order_entity.dart';
+import '../../../order/domain/repositories/order_repository.dart';
 import 'admin_event.dart';
 import 'admin_state.dart';
 
