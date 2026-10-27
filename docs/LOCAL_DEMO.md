@@ -63,6 +63,15 @@ Buka <http://127.0.0.1:5000>.
 ## 4. Jalankan Android
 
 Pastikan emulator Android sudah menyala dan terdeteksi oleh `adb devices`.
+Contoh membuat AVD (sekali saja):
+
+```sh
+avdmanager create avd -n Jeneponto_API35 \
+  -k "system-images;android-35;google_apis;x86_64" -d medium_phone
+emulator -avd Jeneponto_API35
+```
+
+Build dan jalankan aplikasi:
 
 ```sh
 flutter build apk --debug -t lib/main_emulator.dart
@@ -74,10 +83,11 @@ Emulator Android menjangkau host lewat `10.0.2.2`, sehingga Auth, Firestore, dan
 Functions tetap memakai emulator di mesin yang sama. Manifest debug mengizinkan
 HTTP lokal (`usesCleartextTraffic`) khusus untuk kebutuhan demo.
 
-Di Windows, akselerasi emulator bisa memakai Android Emulator Hypervisor Driver:
+Di Windows, akselerasi emulator bisa memakai Android Emulator Hypervisor Driver.
+Dari root Android SDK:
 
 ```sh
-sdkmanager "extras;google;Android_Emulator_Hypervisor_Driver"
+cmdline-tools\latest\bin\android.exe sdk install extras/google/Android_Emulator_Hypervisor_Driver
 ```
 
 Lalu jalankan `silent_install.bat` dari folder package tersebut sebagai
