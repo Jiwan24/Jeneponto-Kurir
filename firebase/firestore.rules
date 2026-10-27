@@ -14,6 +14,16 @@ service cloud.firestore {
       return signedIn() && currentUser().role == 'admin';
     }
 
+    function isCourier() {
+      return signedIn() && currentUser().role == 'courier';
+    }
+
+    function jenepontoPoint(lat, lng) {
+      return lat is number && lng is number
+        && lat >= -5.702882 && lat <= -5.386112
+        && lng >= 119.484864 && lng <= 119.938099;
+    }
+
     // ---- Users ----
     match /users/{userId} {
       // Pengguna hanya membaca profilnya sendiri; admin membaca semua.
@@ -37,41 +47,149 @@ service cloud.firestore {
 
     // ---- Orders ----
     match /orders/{orderId} {
-      // Kurir & admin membaca semua pesanan; pelanggan miliknya;
-      // pesanan 'pending' terbaca kurir agar muncul di daftar order tersedia.
+      // Kurir & admin membaca semua pesanan; pelanggan miliknya.
+      // Hanya kurir yang boleh melihat job board `pending` (alamat & telepon
+      // pelanggan tidak boleh terbuka untuk semua pengguna login).
       allow read: if signedIn() && (
         isAdmin()
         || resource.data.customerId == request.auth.uid
-        || resource.data.courierId == request.auth.uid
-        || resource.data.status == 'pending'
+        || ('courierId' in resource.data
+            && resource.data.courierId == request.auth.uid)
+        || (resource.data.status == 'pending' && isCourier())
       );
 
       // Hanya pelanggan yang bisa membuat pesanan atas namanya sendiri.
+      // Status awal: `pending` untuk COD, `awaitingPayment` untuk gateway.
       allow create: if signedIn()
         && request.resource.data.customerId == request.auth.uid
-        && request.resource.data.status == 'pending'
+        && request.resource.data.status in ['pending', 'awaitingPayment']
         && request.resource.data.price is number
-        && request.resource.data.price >= 0;
+        && request.resource.data.price > 0
+        && (!('distanceKm' in request.resource.data)
+            || (request.resource.data.distanceKm is number
+                && request.resource.data.distanceKm > 0))
+        // Pesanan baru tidak boleh mengaku sudah dibayar atau memiliki kurir.
+        && (!('paymentStatus' in request.resource.data)
+            || request.resource.data.paymentStatus == 'unpaid')
+        && (!('paymentMethod' in request.resource.data)
+            || request.resource.data.paymentStatus == 'unpaid')
+        && (!('courierId' in request.resource.data)
+            || request.resource.data.courierId == null)
+        // Titik peta (bila dikirim) harus berada di bounding box Jeneponto.
+        && (!('pickupLat' in request.resource.data)
+            || jenepontoPoint(
+                 request.resource.data.pickupLat,
+                 request.resource.data.pickupLng
+               ))
+        && (!('dropoffLat' in request.resource.data)
+            || jenepontoPoint(
+                 request.resource.data.dropoffLat,
+                 request.resource.data.dropoffLng
+               ))
+        // Pesanan baru (yang mengirim paymentMethod) wajib punya kedua titik
+        // peta agar tarif bisa dihitung ulang server. Order lama tanpa
+        // paymentMethod tetap diizinkan demi kompatibilitas.
+        && (!('paymentMethod' in request.resource.data)
+            || (('pickupLat' in request.resource.data)
+                && ('pickupLng' in request.resource.data)
+                && ('dropoffLat' in request.resource.data)
+                && ('dropoffLng' in request.resource.data)))
+        // Bila metode pembayaran dikirim, status harus konsisten.
+        && (!('paymentMethod' in request.resource.data)
+            || (request.resource.data.paymentMethod == 'cod'
+                && request.resource.data.status == 'pending')
+            || (request.resource.data.paymentMethod == 'midtrans'
+                && request.resource.data.status == 'awaitingPayment'))
+        // Kurir hanya ditentukan lewat proses accept, bukan saat create.
+        && (!('courierName' in request.resource.data)
+            || request.resource.data.courierName == null)
+        && (!('courierPhone' in request.resource.data)
+            || request.resource.data.courierPhone == null);
 
       allow update: if signedIn() && (
         // Admin: bebas memperbarui.
         isAdmin()
-        // Pelanggan: hanya membatalkan pesanan miliknya yang masih pending.
+        // Pelanggan: hanya membatalkan pesanan miliknya yang belum diambil.
+        // Field transaksi lain tidak boleh ikut berubah.
         || (resource.data.customerId == request.auth.uid
+            && resource.data.status in ['pending', 'awaitingPayment']
+            && (!('paymentStatus' in resource.data)
+                || resource.data.paymentStatus != 'paid')
+            && request.resource.data.status == 'cancelled'
+            && request.resource.data.diff(resource.data)
+                 .affectedKeys()
+                 .hasOnly(['status', 'cancelledReason', 'cancelledAt', 'updatedAt']))
+        // Kurir: menerima order pending (menjadi miliknya), tanpa mengubah
+        // harga/alamat/data pelanggan.
+        || (isCourier()
             && resource.data.status == 'pending'
-            && request.resource.data.status == 'cancelled')
-        // Kurir: menerima order pending (menjadi miliknya) ...
-        || (resource.data.status == 'pending'
             && request.resource.data.status == 'accepted'
-            && request.resource.data.courierId == request.auth.uid)
-        // ... lalu memajukan status pengiriman miliknya sendiri.
-        || (resource.data.courierId == request.auth.uid
-            && resource.data.status != 'delivered'
-            && resource.data.status != 'cancelled')
+            && (!('paymentMethod' in resource.data)
+                || resource.data.paymentMethod != 'midtrans'
+                || resource.data.paymentStatus == 'paid')
+            && request.resource.data.courierId == request.auth.uid
+            && (!('courierId' in resource.data)
+                || resource.data.courierId == null)
+            && request.resource.data.diff(resource.data)
+                 .affectedKeys()
+                 .hasOnly([
+                   'status', 'courierId', 'courierName', 'updatedAt',
+                   'acceptedAt'
+                 ]))
+        // ... lalu memajukan status pengiriman miliknya sendiri, satu langkah
+        // pada satu waktu. Harga dan data lain bersifat immutable.
+        || (isCourier()
+            && resource.data.courierId == request.auth.uid
+            && ((resource.data.status == 'accepted'
+                  && request.resource.data.status == 'pickedUp')
+                || (resource.data.status == 'pickedUp'
+                  && request.resource.data.status == 'inTransit')
+                || (resource.data.status == 'inTransit'
+                  && request.resource.data.status == 'delivered'))
+            && request.resource.data.courierId == resource.data.courierId
+            && request.resource.data.diff(resource.data)
+                 .affectedKeys()
+                 .hasOnly([
+                   'status', 'updatedAt', 'pickedUpAt', 'inTransitAt',
+                   'deliveredAt'
+                 ]))
       );
 
       // Hanya admin yang boleh menghapus data transaksi.
       allow delete: if isAdmin();
+    }
+
+    // ---- Payments ----
+    // Dokumen dibuat/diperbarui oleh Cloud Function (Admin SDK). Client
+    // hanya boleh membaca pembayaran miliknya atau pembayaran order yang
+    // sedang ia antar.
+    match /payments/{orderId} {
+      allow read: if signedIn() && (
+        isAdmin()
+        || resource.data.customerId == request.auth.uid
+        || resource.data.courierId == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    // ---- Courier wallet ----
+    // Saldo bersifat server-authoritative: hanya Cloud Function yang menulis.
+    match /wallets/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if false;
+    }
+
+    match /wallet_transactions/{transactionId} {
+      allow read: if signedIn() && (
+        isAdmin() || resource.data.uid == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    // ---- Platform config ----
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
     }
 
     match /{document=**} {
