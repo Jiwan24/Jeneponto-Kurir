@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function currentUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return signedIn() && currentUser().role == 'admin';
+    }
+
+    // ---- Users ----
+    match /users/{userId} {
+      // Pengguna hanya membaca profilnya sendiri; admin membaca semua.
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+
+      // Pendaftaran hanya membuat profil miliknya sendiri,
+      // dan role dibatasi ke customer/courier (admin dibuat manual).
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role in ['customer', 'courier'];
+
+      allow update: if signedIn()
+        && (request.auth.uid == userId || isAdmin())
+        // Role hanya boleh diubah oleh admin.
+        && (!('role' in request.resource.data)
+            || request.resource.data.role == resource.data.role
+            || isAdmin());
+
+      allow delete: if isAdmin();
+    }
+
+    // ---- Orders ----
+    match /orders/{orderId} {
+      // Kurir & admin membaca semua pesanan; pelanggan miliknya;
+      // pesanan 'pending' terbaca kurir agar muncul di daftar order tersedia.
+      allow read: if signedIn() && (
+        isAdmin()
+        || resource.data.customerId == request.auth.uid
+        || resource.data.courierId == request.auth.uid
+        || resource.data.status == 'pending'
+      );
+
+      // Hanya pelanggan yang bisa membuat pesanan atas namanya sendiri.
+      allow create: if signedIn()
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.price is number
+        && request.resource.data.price >= 0;
+
+      allow update: if signedIn() && (
+        // Admin: bebas memperbarui.
+        isAdmin()
+        // Pelanggan: hanya membatalkan pesanan miliknya yang masih pending.
+        || (resource.data.customerId == request.auth.uid
+            && resource.data.status == 'pending'
+            && request.resource.data.status == 'cancelled')
+        // Kurir: menerima order pending (menjadi miliknya) ...
+        || (resource.data.status == 'pending'
+            && request.resource.data.status == 'accepted'
+            && request.resource.data.courierId == request.auth.uid)
+        // ... lalu memajukan status pengiriman miliknya sendiri.
+        || (resource.data.courierId == request.auth.uid
+            && resource.data.status != 'delivered'
+            && resource.data.status != 'cancelled')
+      );
+
+      // Hanya admin yang boleh menghapus data transaksi.
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
